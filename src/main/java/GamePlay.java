@@ -231,8 +231,8 @@ public class GamePlay extends JFrame implements ActionListener {
             leaderBoard.writeFile();
 
             JOptionPane.showMessageDialog(
-                null,
-                "Puzzle berhasil diselesaikan"
+                    null,
+                    "Nama: "+name+"\nSkor: "+seconds
             );
             setVisible(false);
             Main main = new Main();
