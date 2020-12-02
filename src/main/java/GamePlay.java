@@ -46,7 +46,7 @@ public class GamePlay extends JFrame implements ActionListener {
 
         /* Name */
         this.name = name;
-        labelName.setName(name);
+        labelName.setText(name);
 
         /* Timer */
         new Timer().scheduleAtFixedRate(new TimerTask() {
