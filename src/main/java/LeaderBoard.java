@@ -15,7 +15,9 @@ public class LeaderBoard {
      */
     LeaderBoard(){
         /* Read File saat diinisialisasi */
-        this.readFile();
+        if(new File(pathName).exists()) {
+            this.readFile();
+        }
     }
 
     /**

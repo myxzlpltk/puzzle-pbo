@@ -41,7 +41,7 @@ public class GamePlay extends JFrame implements ActionListener {
         panelPuzzle.setLayout(new GridLayout(3, 3, 0, 0));
 
         initializePuzzle(file);
-//        randomPuzzle();
+        randomPuzzle();
         drawPuzzle();
 
         /* Name */
