@@ -9,8 +9,10 @@ import java.awt.image.FilteredImageSource;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
 import java.util.Timer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class GamePlay extends JFrame implements ActionListener {
 
@@ -28,8 +30,8 @@ public class GamePlay extends JFrame implements ActionListener {
         {3, 4, 5},
         {6, 7, 8},
     };
-    private List<Position> state = new ArrayList<>();
-    private List<Position> solved = new ArrayList<>();
+    private ArrayList<Position> state = new ArrayList<>();
+    private ArrayList<Position> solved = new ArrayList<>();
     private int seconds = 0;
     private String name;
 
@@ -84,7 +86,7 @@ public class GamePlay extends JFrame implements ActionListener {
         }
 
         /* Load position array */
-        int index = 0;
+        int index = 1;
         for ( int i = 0; i < 3; i++) {
             for ( int j = 0; j < 3; j++) {
                 Position position = new Position(i,j,index++);
@@ -99,7 +101,7 @@ public class GamePlay extends JFrame implements ActionListener {
         /* Selama puzzle unsolvable, acak! */
         do{
             Collections.shuffle(state);
-        } while (isSolvable(state));
+        } while (!isSolvable(state));
     }
 
     /* Inject cell to panel */
@@ -135,13 +137,22 @@ public class GamePlay extends JFrame implements ActionListener {
      * @param state list posisi
      * @return boolean
      */
-    private boolean isSolvable(List<Position> state) {
+    private boolean isSolvable(ArrayList<Position> state) {
+        /* Clone */
+        ArrayList<Position> newState = (ArrayList<Position>) state.clone();
+        newState = (ArrayList<Position>) newState.stream().filter(new Predicate<Position>() {
+            @Override
+            public boolean test(Position position) {
+                return position.index != 9;
+            }
+        }).collect(Collectors.toList());
+
         /* Set inversion ke 0 */
         int inversion = 0;
         /* Looping */
-        for (int i=0; i<state.size(); i++){
-            for (int j=i+1; j<state.size(); j++){
-                if(state.get(j).index > state.get(i).index){
+        for (int i=0; i<newState.size(); i++){
+            for (int j=i+1; j<newState.size(); j++){
+                if(newState.get(j).index > newState.get(i).index){
                     inversion++;
                 }
             }
@@ -159,6 +170,7 @@ public class GamePlay extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         /* Dont touch this shitty code */
         JButton button = (JButton) e.getSource();
+        button.getParent().requestFocus();
         Dimension size = button.getSize();
 
         int labelX = whiteButton.getX();
