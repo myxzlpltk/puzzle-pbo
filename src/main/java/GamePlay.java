@@ -29,7 +29,7 @@ public class GamePlay extends Puzzle implements ActionListener {
     };
     private ArrayList<Position> state = new ArrayList<>();
     private ArrayList<Position> originalState = new ArrayList<>();
-    private int seconds = 0;
+    private int timer = 0;
     private File file;
     private String name;
 
@@ -54,9 +54,9 @@ public class GamePlay extends Puzzle implements ActionListener {
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                seconds++;
+                timer++;
                 labelTime.setText(
-                    String.format("%2s:%2s", seconds/60, seconds%60).replace(' ', '0')
+                    String.format("%2s:%2s", timer/60, timer%60).replace(' ', '0')
                 );
             }
         }, 0, 1000);
@@ -156,12 +156,12 @@ public class GamePlay extends Puzzle implements ActionListener {
     protected void checkSolution() {
         if(state.equals(originalState)){
             LeaderBoard leaderBoard = new LeaderBoard();
-            leaderBoard.push(new Player(name, seconds));
+            leaderBoard.push(new Player(name, timer));
             leaderBoard.writeFile();
 
             JOptionPane.showMessageDialog(
                     null,
-                    "Nama: "+name+"\nSkor: "+seconds
+                    "Nama: "+name+"\nSkor: "+timer
             );
             setVisible(false);
             Main main = new Main();
