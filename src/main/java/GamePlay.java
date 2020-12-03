@@ -10,11 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.Timer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-public class GamePlay extends JFrame implements ActionListener {
+public class GamePlay extends Puzzle implements ActionListener {
 
     private JPanel panel1;
     private JLabel labelName;
@@ -31,23 +28,27 @@ public class GamePlay extends JFrame implements ActionListener {
         {6, 7, 8},
     };
     private ArrayList<Position> state = new ArrayList<>();
-    private ArrayList<Position> solved = new ArrayList<>();
+    private ArrayList<Position> originalState = new ArrayList<>();
     private int seconds = 0;
+    private File file;
     private String name;
 
     public GamePlay(String name, File file){
-        super("Main Menu");
+        super("GamePlay");
 
         /* Setting layout puzzle */
         panelPuzzle.setLayout(new GridLayout(3, 3, 0, 0));
 
-        initializePuzzle(file);
-        randomPuzzle();
-        drawPuzzle();
-
         /* Name */
         this.name = name;
         labelName.setText(name);
+
+        /* File */
+        this.file = file;
+
+        initialize();
+        randomize();
+        draw();
 
         /* Timer */
         new Timer().scheduleAtFixedRate(new TimerTask() {
@@ -67,7 +68,7 @@ public class GamePlay extends JFrame implements ActionListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
-    private void initializePuzzle(File file){
+    protected void initialize(){
         try {
             /* Read file */
             source = ImageIO.read(file);
@@ -75,12 +76,10 @@ public class GamePlay extends JFrame implements ActionListener {
             /* Get width and height */
             int width = source.getWidth();
             int height = source.getHeight();
-            /* Get dimension */
-            int dim = Math.min(width, height);
 
             /* Crop center and resize to 300px * 300px */
-            source = source.getSubimage((width-dim)/2,(height-dim)/2,dim,dim);
-            source = resize(source,300,300);
+            source = ImageHelper.cropCenterSquare(source);
+            source = ImageHelper.resize(source,300);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -91,21 +90,22 @@ public class GamePlay extends JFrame implements ActionListener {
             for ( int j = 0; j < 3; j++) {
                 Position position = new Position(i,j,index++);
                 state.add(position);
-                solved.add(position);
             }
         }
+
+        originalState = (ArrayList<Position>) state.clone();
     }
 
     /* Random Puzzle */
-    private void randomPuzzle() {
+    protected void randomize() {
         /* Selama puzzle unsolvable, acak! */
         do{
             Collections.shuffle(state);
-        } while (!isSolvable(state));
+        } while (!isSolvable());
     }
 
     /* Inject cell to panel */
-    private void drawPuzzle() {
+    protected void draw() {
         int width = source.getWidth();
         int height = source.getHeight();
         for (Position position: state){
@@ -120,12 +120,10 @@ public class GamePlay extends JFrame implements ActionListener {
                 button.setBorder(BorderFactory.createEmptyBorder());
                 button.addActionListener(this);
                 panelPuzzle.add(button);
-                image = createImage(new FilteredImageSource(
-                    source.getSource(),
-                    new CropImageFilter(
-                        position.j*width/3, position.i*height/3,
-                        (width/3)+1, height/3)
-                    )
+                image = ImageHelper.crop(
+                    source,
+                    position.j*width/3, position.i*height/3,
+                    width/3, height/3
                 );
                 button.setIcon(new ImageIcon(image));
             }
@@ -134,25 +132,15 @@ public class GamePlay extends JFrame implements ActionListener {
 
     /**
      * Mengecek apakah puzzle dapat diselesaikan
-     * @param state list posisi
      * @return boolean
      */
-    private boolean isSolvable(ArrayList<Position> state) {
-        /* Clone */
-        ArrayList<Position> newState = (ArrayList<Position>) state.clone();
-        newState = (ArrayList<Position>) newState.stream().filter(new Predicate<Position>() {
-            @Override
-            public boolean test(Position position) {
-                return position.index != 9;
-            }
-        }).collect(Collectors.toList());
-
+    protected boolean isSolvable() {
         /* Set inversion ke 0 */
         int inversion = 0;
         /* Looping */
-        for (int i=0; i<newState.size(); i++){
-            for (int j=i+1; j<newState.size(); j++){
-                if(newState.get(j).index > newState.get(i).index){
+        for (int i=0; i<state.size(); i++){
+            for (int j=i+1; j<state.size(); j++){
+                if(state.get(i).index != 9 && state.get(j).index != 9 && state.get(j).index > state.get(i).index){
                     inversion++;
                 }
             }
@@ -160,6 +148,24 @@ public class GamePlay extends JFrame implements ActionListener {
 
         /* Jika inversion genap maka dapat diselesaikan */
         return inversion%2 == 0;
+    }
+
+    /**
+     * Is Game Solved
+     */
+    protected void checkSolution() {
+        if(state.equals(originalState)){
+            LeaderBoard leaderBoard = new LeaderBoard();
+            leaderBoard.push(new Player(name, seconds));
+            leaderBoard.writeFile();
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Nama: "+name+"\nSkor: "+seconds
+            );
+            setVisible(false);
+            Main main = new Main();
+        }
     }
 
     /**
@@ -229,42 +235,7 @@ public class GamePlay extends JFrame implements ActionListener {
         }
         /* End of shitty code */
 
-        isSolved();
+        checkSolution();
     }
 
-    /**
-     * Is Game Solved
-     */
-    private void isSolved() {
-        if(state.equals(solved)){
-            LeaderBoard leaderBoard = new LeaderBoard();
-            leaderBoard.push(new Player(name, seconds));
-            leaderBoard.writeFile();
-
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Nama: "+name+"\nSkor: "+seconds
-            );
-            setVisible(false);
-            Main main = new Main();
-        }
-    }
-
-    /**
-     * Resize image
-     * @param img gambar
-     * @param newW width baru
-     * @param newH height baru
-     * @return gambar
-     */
-    public static BufferedImage resize(BufferedImage img, int newW, int newH) {
-        Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
-        BufferedImage dimg = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB);
-
-        Graphics2D g2d = dimg.createGraphics();
-        g2d.drawImage(tmp, 0, 0, null);
-        g2d.dispose();
-
-        return dimg;
-    }
 }
