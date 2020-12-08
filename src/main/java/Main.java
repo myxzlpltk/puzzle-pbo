@@ -34,6 +34,7 @@ public class Main extends JFrame implements ActionListener {
         tableLeaderBoard.setModel(new ModelLeaderBoard(leaderBoard));
 
         /* Setting frame */
+        setLocation(300,200);
         setContentPane(panel1);
         pack();
         setVisible(true);
