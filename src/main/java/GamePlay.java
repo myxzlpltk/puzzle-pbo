@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.Timer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class GamePlay extends Puzzle implements ActionListener {
 
@@ -135,10 +137,19 @@ public class GamePlay extends Puzzle implements ActionListener {
     protected boolean isSolvable() {
         /* Set inversion ke 0 */
         int inversion = 0;
+        /* Create temp state */
+        ArrayList<Position> state = (ArrayList<Position>) this.state.clone();
+        state = (ArrayList<Position>) state.stream().filter(new Predicate<Position>() {
+            @Override
+            public boolean test(Position position) {
+                return position.index != 9;
+            }
+        }).collect(Collectors.toList());
+
         /* Looping */
         for (int i=0; i<state.size(); i++){
             for (int j=i+1; j<state.size(); j++){
-                if(state.get(i).index != 9 && state.get(j).index != 9 && state.get(j).index > state.get(i).index){
+                if(state.get(j).index > state.get(i).index){
                     inversion++;
                 }
             }
